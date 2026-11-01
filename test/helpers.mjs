@@ -5,11 +5,13 @@ import {randomBytes} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 export const token = () => randomBytes(32).toString('base64url');
 export function fixture(t) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-remote-test-'));
+  // Hosted Windows runners may expose TEMP through an 8.3 alias. Tests register
+  // the canonical path so they do not accidentally exercise an alias root.
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-remote-test-')));
   const source = path.join(root, 'source'); fs.mkdirSync(source);
   t.after(() => {
     const absolute = path.resolve(root);
-    if (path.dirname(absolute) !== path.resolve(os.tmpdir()) || !path.basename(absolute).startsWith('dsh-remote-test-')) throw Error('invalid fixture cleanup');
+    if (path.dirname(absolute) !== fs.realpathSync(os.tmpdir()) || !path.basename(absolute).startsWith('dsh-remote-test-')) throw Error('invalid fixture cleanup');
     fs.rmSync(absolute, {recursive: true, force: true});
   });
   return {root, source, roots: [{id: 'test', path: source, label: '合成文件'}]};
