@@ -27,6 +27,8 @@ jobs:
           path: .test-integrations/heart
           persist-credentials: false
       - run: npm ci --ignore-scripts
+      - name: Report filesystem path API compatibility
+        run: node --input-type=module -e "import fs from 'node:fs'; import os from 'node:os'; const p=os.tmpdir(); console.log(JSON.stringify({sync:fs.realpathSync(p),native:fs.realpathSync.native(p),async:await fs.promises.realpath(p)}));"
       - run: npm test
         env:
           DSH_HEART_ROOT: ${{ github.workspace }}/.test-integrations/heart

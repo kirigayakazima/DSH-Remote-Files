@@ -6,7 +6,7 @@ import {randomBytes} from 'node:crypto';
 import {startFileServer} from '../lib/server.mjs';
 import {createRemoteClient} from '../lib/client.mjs';
 import {startBrowserServer} from '../pc/server.mjs';
-const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-remote-demo-')));
+const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-remote-demo-')));
 const source = path.join(root, 'source'); fs.mkdirSync(source); fs.mkdirSync(path.join(source, 'body'));
 fs.writeFileSync(path.join(source, 'notebook.md'), '# 合成演示\n\n- 先把事情说明白，再慢慢做完。\n- 这里没有小满的真实记忆。\n');
 fs.writeFileSync(path.join(source, 'body', 'voice.md'), '# 合成表达习惯\n\n这是一份用于界面验收的测试文件。\n');
@@ -21,7 +21,7 @@ let stopped = false;
 async function close() {
   if (stopped) return; stopped = true;
   await browser.close(); await phone.close();
-  if (path.dirname(root) === fs.realpathSync(os.tmpdir()) && path.basename(root).startsWith('dsh-remote-demo-')) fs.rmSync(root, {recursive: true, force: true});
+  if (path.dirname(root) === fs.realpathSync.native(os.tmpdir()) && path.basename(root).startsWith('dsh-remote-demo-')) fs.rmSync(root, {recursive: true, force: true});
 }
 for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, close);
 setTimeout(close, 300000).unref();
