@@ -1,0 +1,7 @@
+# Explicit configuration and enablement are required. No listener starts by installing this bundle.
+- insert:
+    - id: dsh-remote-files
+      name: "@dsh/remote-files"
+      config:
+        enabled: false
+        configFile: ""

@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小满 · 只读维护台</title><link rel="stylesheet" href="/style.css"></head>
+<body><main><header><div><p class="eyebrow">DSHA · MAINTENANCE</p><h1>小满的文件</h1><p>按需查看当前文件，保留每次读取的时间与来源。</p></div><span class="badge">只读</span></header>
+<form id="login"><label for="token">本机维护口令</label><div class="login-row"><input id="token" type="password" autocomplete="off" required placeholder="使用独立 UI token 文件中的口令"><button type="submit">连接</button></div><small>口令仅保留在当前页面内存，关闭页面即清除。</small></form>
+<section id="workspace" hidden><div class="toolbar"><select id="roots" aria-label="允许查看的目录"></select><button id="up">上一级</button><button id="refresh">刷新</button><button id="logout" class="secondary">断开</button></div>
+<p id="connection" role="status">尚未连接</p><div class="layout"><nav><h2 id="location">目录</h2><p id="directory-note" role="status" hidden></p><ul id="entries"></ul><button id="more" hidden>更多条目</button></nav><article><h2 id="filename">选择一个文件</h2><p id="metadata">当前文件预览</p><pre id="preview">点击左侧的目录或文件。</pre></article></div>
+<aside><h2>Vault · 已验证恢复点</h2><p id="vault">未配置备份状态来源。</p><small>这是历史备份状态，与手机当前文件分别显示。</small></aside></section>
+<footer>在线视图不是全局一致快照。数据库、压缩会话和敏感配置需要专门的查看入口。</footer></main><script src="/app.js"></script></body></html>

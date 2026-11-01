@@ -1,0 +1,56 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import https from 'node:https';
+import http from 'node:http';
+import {X509Certificate} from 'node:crypto';
+import {startFileServer} from '../lib/server.mjs';
+import {createRemoteClient} from '../lib/client.mjs';
+import {startBrowserServer} from '../pc/server.mjs';
+import {fixture, token, certificates} from './helpers.mjs';
+
+test('HTTP: authenticated read-only routes and PC broker isolate credentials', async t => {
+  const f = fixture(t); fs.writeFileSync(path.join(f.source, 'note.md'), '<script>untrusted</script>');
+  const secret = token(), uiToken = token();
+  const phone = await startFileServer({...f, token: secret}); t.after(() => phone.close());
+  const url = `http://127.0.0.1:${phone.port}`;
+  assert.equal((await fetch(url + '/v1/roots')).status, 401);
+  const headers = {Authorization: `Bearer ${secret}`};
+  assert.equal((await fetch(url + '/v1/read', {method: 'POST', headers})).status, 405);
+  assert.equal((await fetch(url + '/v1/roots?token=bad', {headers})).status, 400);
+  assert.equal((await fetch(url + '/v1/list?root=test&root=other', {headers})).status, 400);
+  assert.equal((await fetch(url + '/v1/read?root=test&path=note.md', {headers: {...headers, Origin: 'http://untrusted.example'}})).status, 403);
+  const client = createRemoteClient({url, token: secret});
+  assert.equal((await client.request('/v1/read?root=test&path=note.md')).text, '<script>untrusted</script>');
+  const browser = await startBrowserServer({remoteClient: client, uiToken, getVaultStatus: () => ({available: true, lastVerified: {snapshotId: 'a'.repeat(64)}})}); t.after(() => browser.close());
+  const page = await fetch(browser.url); assert.equal(page.status, 200); assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  const html = await page.text(); assert.ok(!html.includes(secret) && !html.includes(uiToken));
+  assert.equal((await fetch(browser.url + '/api/roots')).status, 401);
+  assert.equal((await fetch(browser.url + '/api/roots', {headers: {Authorization: `Bearer ${secret}`}})).status, 401);
+  const uiHeaders = {Authorization: `Bearer ${uiToken}`};
+  assert.equal((await (await fetch(browser.url + '/api/read?root=test&path=note.md', {headers: uiHeaders})).json()).text, '<script>untrusted</script>');
+  const badHost = await new Promise((resolve, reject) => { http.get(browser.url + '/api/roots', {headers: {...uiHeaders, Host: 'attacker.example'}}, response => { response.resume(); resolve(response.statusCode); }).on('error', reject); });
+  assert.equal(badHost, 403);
+  assert.equal((await fetch(browser.url + '/api/roots', {headers: {...uiHeaders, Origin: 'http://attacker.example'}})).status, 403);
+  assert.equal((await (await fetch(browser.url + '/api/vault', {headers: uiHeaders})).json()).available, true);
+  await phone.close();
+  await assert.rejects(client.request('/v1/status'), /REMOTE_UNAVAILABLE/);
+});
+
+test('LAN requires mutual TLS; wrong token, certificate and server trust are rejected', {timeout: 30000}, async t => {
+  const f = fixture(t), secret = token();
+  await assert.rejects(startFileServer({...f, host: '192.168.1.5', token: secret}), /MTLS_REQUIRED/);
+  assert.throws(() => createRemoteClient({url: 'http://192.168.1.5:22225', token: secret}), /TLS_REQUIRED/);
+  const certs = certificates(f.root);
+  await assert.rejects(startFileServer({...f, token: secret, tls: certs.phone}), /MTLS_REQUIRED/);
+  const phone = await startFileServer({...f, token: secret, tls: {...certs.phone, ca: certs.pc.cert, peerFingerprint: new X509Certificate(certs.pc.cert).fingerprint256}}); t.after(() => phone.close());
+  const url = `https://127.0.0.1:${phone.port}`;
+  const tls = {...certs.pc, ca: certs.phone.cert, peerFingerprint: new X509Certificate(certs.phone.cert).fingerprint256};
+  assert.equal((await createRemoteClient({url, token: secret, tls}).request('/v1/status')).readOnly, true);
+  await assert.rejects(createRemoteClient({url, token: secret, tls: {...tls, peerFingerprint: new X509Certificate(certs.stranger.cert).fingerprint256}}).request('/v1/status'), /REMOTE_UNAVAILABLE/);
+  await assert.rejects(createRemoteClient({url, token: token(), tls}).request('/v1/status'), /UNAUTHORIZED/);
+  await assert.rejects(createRemoteClient({url, token: secret, tls: {...certs.stranger, ca: certs.phone.cert}}).request('/v1/status'), /REMOTE_UNAVAILABLE/);
+  await assert.rejects(createRemoteClient({url, token: secret, tls: {...certs.pc, ca: certs.stranger.cert}}).request('/v1/status'), /REMOTE_UNAVAILABLE/);
+  await assert.rejects(new Promise((resolve, reject) => { https.get(url + '/v1/status', {ca: certs.phone.cert}, resolve).on('error', reject); }));
+});

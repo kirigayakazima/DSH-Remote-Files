@@ -1,0 +1,8 @@
+{
+  "port": 22226,
+  "uiTokenFile": "C:/Private/DSH-Remote-Files/ui.token",
+  "remote": {
+    "url": "http://127.0.0.1:22225/",
+    "tokenFile": "C:/Private/DSH-Remote-Files/access.token"
+  }
+}

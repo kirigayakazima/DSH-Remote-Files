@@ -1,0 +1,61 @@
+{
+  "name": "@dsh/remote-files",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "小满在线只读文件查看：独立传输、PC维护界面与可选Heart状态适配",
+  "main": "lib/plugin.mjs",
+  "exports": {
+    ".": "./lib/plugin.mjs",
+    "./files": "./lib/files.mjs",
+    "./server": "./lib/server.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "lib",
+    "phone",
+    "pc",
+    "web",
+    "cordis.patch.yml",
+    "README.md",
+    "config.phone.example.json",
+    "config.pc.example.json",
+    "LICENSE",
+    "docs",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start:phone": "node phone/serve.mjs",
+    "start:pc": "node pc/browser.mjs"
+  },
+  "license": "MIT",
+  "author": "kirigayakazima",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kirigayakazima/DSH-Remote-Files.git"
+  },
+  "homepage": "https://github.com/kirigayakazima/DSH-Remote-Files#readme",
+  "bugs": {
+    "url": "https://github.com/kirigayakazima/DSH-Remote-Files/issues"
+  },
+  "keywords": [
+    "dsh",
+    "cordis",
+    "android",
+    "proot",
+    "read-only",
+    "remote-files"
+  ],
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.1"
+  }
+}

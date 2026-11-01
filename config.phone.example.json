@@ -1,0 +1,10 @@
+{
+  "host": "127.0.0.1",
+  "port": 22225,
+  "tokenFile": "/root/.dsh-remote-files/access.token",
+  "roots": [
+    {"id": "heart", "label": "小满 · Heart", "path": "/root/.dsh/heart"},
+    {"id": "plugins", "label": "插件源码", "path": "/root/.dsh/plugin-src"}
+  ],
+  "limits": {"maxReadBytes": 65536, "maxEntries": 200}
+}
